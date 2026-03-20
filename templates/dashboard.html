@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReplyForce — Review Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header>
+        <div class="header-inner">
+            <h1>ReplyForce</h1>
+            <span class="tagline">AI-Powered Review Responses</span>
+        </div>
+    </header>
+
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+        <div class="stat">
+            <span class="stat-value">{{ stats.total }}</span>
+            <span class="stat-label">Total Reviews</span>
+        </div>
+        <div class="stat">
+            <span class="stat-value">{{ stats.pending }}</span>
+            <span class="stat-label">Pending</span>
+        </div>
+        <div class="stat">
+            <span class="stat-value">{{ stats.approved }}</span>
+            <span class="stat-label">Approved</span>
+        </div>
+        <div class="stat">
+            <span class="stat-value">{{ stats.sent }}</span>
+            <span class="stat-label">Sent</span>
+        </div>
+        <div class="stat">
+            <span class="stat-value">{{ "%.1f"|format(stats.avg_rating) }}&#9733;</span>
+            <span class="stat-label">Avg Rating</span>
+        </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <nav class="tabs">
+        <a href="/" class="tab {% if tab == 'pending' %}active{% endif %}">Pending ({{ stats.pending }})</a>
+        <a href="/all" class="tab {% if tab == 'all' %}active{% endif %}">All Reviews</a>
+    </nav>
+
+    <main>
+        {% if reviews|length == 0 %}
+        <div class="empty-state">
+            <p>No reviews to display.</p>
+            <p class="hint">Set GOOGLE_API_KEY to connect to real reviews, or restart to seed mock data.</p>
+        </div>
+        {% endif %}
+
+        {% for review in reviews %}
+        <div class="review-card {% if review.rating <= 2 %}negative{% elif review.rating >= 4 %}positive{% endif %}">
+            <div class="review-header">
+                <div class="reviewer-info">
+                    <strong>{{ review.reviewer_name }}</strong>
+                    <span class="rating">
+                        {% for i in range(5) %}
+                            {% if i < review.rating %}&#9733;{% else %}&#9734;{% endif %}
+                        {% endfor %}
+                    </span>
+                    <span class="business-tag">{{ review.business_name }}</span>
+                </div>
+                <span class="status-badge status-{{ review.status }}">{{ review.status }}</span>
+            </div>
+
+            <div class="review-body">
+                <p class="review-text">{{ review.review_text }}</p>
+            </div>
+
+            {% if review.response_text %}
+            <div class="response-body">
+                <div class="response-label">AI-Generated Response:</div>
+                <p class="response-text">{{ review.response_text }}</p>
+            </div>
+            {% endif %}
+
+            <div class="review-actions">
+                {% if review.status == 'pending' %}
+                <form action="/approve/{{ review.id }}" method="post" style="display:inline">
+                    <button type="submit" class="btn btn-approve">Approve</button>
+                </form>
+                <form action="/reject/{{ review.id }}" method="post" style="display:inline">
+                    <button type="submit" class="btn btn-reject">Reject</button>
+                </form>
+                <form action="/regenerate/{{ review.id }}" method="post" style="display:inline">
+                    <button type="submit" class="btn btn-regenerate">Regenerate</button>
+                </form>
+                {% elif review.status == 'approved' %}
+                <form action="/send/{{ review.id }}" method="post" style="display:inline">
+                    <button type="submit" class="btn btn-send">Mark as Sent</button>
+                </form>
+                <form action="/regenerate/{{ review.id }}" method="post" style="display:inline">
+                    <button type="submit" class="btn btn-regenerate">Regenerate</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </main>
+
+    <footer>
+        <p>ReplyForce v0.1 &mdash; Built for multi-location businesses</p>
+    </footer>
+</body>
+</html>
